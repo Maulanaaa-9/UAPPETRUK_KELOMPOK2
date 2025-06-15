@@ -295,3 +295,230 @@ public:
     }
 };
 
+// =====================
+// Fungsi utama aplikasi
+// =====================
+int main() {
+    list<User*> users; 
+    Cinema cinema;
+
+    stack<string> bookingActions;
+    queue<User*> waitingList;
+
+    // Membaca data user dari file users.txt sebelum menu
+    loadUsers(users);
+
+    displayHeader();
+    cout << endl;
+    displayMenu();
+
+    string choice;
+    cin >> choice;
+
+    // =====================
+    // Proses Register
+    // =====================
+    if (choice == "1") {
+        string username, password;
+        cout << "Enter username: ";
+        cin >> username;
+
+        if (username.length() > 20) {
+            cout << "\033[1;31mInvalid username length. Maximum length is 20 characters.\033[0m" << endl;
+            return 0;
+        }
+
+        cout << "Enter password: ";
+        cin >> password;
+        users.push_back(new User(username, password));
+        saveUser(username, password);
+
+        cout << "\033[1;32mRegistration successful!\033[0m" << endl;
+        cout << endl;
+
+        cout << "=========================" << endl;
+        cout << "\033[38;5;208mPlease login to continue.\033[0m" << endl;
+
+        cout << "Username: ";
+        cin >> username;
+        cout << "Password: ";
+        cin >> password;
+        cout << endl;
+
+        bool loggedIn = false;
+        User* currentUser = nullptr;
+        for (User* user : users) {
+            if (user->login(username, password)) {
+                loggedIn = true;
+                currentUser = user;
+                break;
+            }
+        }
+
+        if (!loggedIn) {
+            cout << "\033[1;31mInvalid credentials\033[0m" << endl;
+            return 0;
+        }
+
+        // Tambahkan daftar film
+        cinema.addMovie(new Movie("When I Fly Towards You", "10:00 AM", "Monday", 10));
+        cinema.addMovie(new Movie("Hidden Love", "12.30 PM", "Tuesday", 12));
+        cinema.addMovie(new Movie("Math Teacher, My Soulmate", "03.00 PM", "Wednesday", 20));
+        cinema.addMovie(new Movie("Lovely Runner", "05.30 PM", "Thursday", 13));
+        cinema.addMovie(new Movie("Death's Game", "08.00 PM", "Friday", 17));
+
+        // Proses booking
+        size_t movieID;
+        int seatNumber;
+        cinema.displayMovies();
+        cout << "Select a movie by ID: ";
+        cin >> movieID;
+        movieID--;
+
+        if (movieID >= cinema.getNumberOfMovies()) {
+            cout << "\033[1;31mInvalid movie ID\033[0m" << endl;
+            return 0;
+        }
+
+        string movieTitle = cinema.getMovie(movieID)->getTitle();
+        set<int> booked = getBookedSeats(movieTitle);
+        displaySeats(booked, 50, 10);
+
+        cout << "Select a seat number (0-49): ";
+        cin >> seatNumber;
+
+        if (seatNumber < 0 || seatNumber >= 50) {
+            cout << "\033[1;31mInvalid seat number\033[0m" << endl;
+            return 0;
+        }
+        if (booked.count(seatNumber)) {
+            cout << "\033[1;31mSeat already booked!\033[0m" << endl;
+            return 0;
+        }
+
+        if (cinema.selectSeat(movieID, seatNumber)) {
+            saveBooking(currentUser->username, movieTitle, seatNumber); // Simpan ke file
+            bookingActions.push("User " + currentUser->username + " booked seat " + to_string(seatNumber) + " for movie " + movieTitle);
+            Booking::confirmBooking(currentUser, cinema.getMovie(movieID), seatNumber);
+            cinema.displayTicket(currentUser, cinema.getMovie(movieID), seatNumber);
+        } else {
+            cout << "\033[1;31mSeat is already taken. Adding to the waiting list.\033[0m" << endl;
+            waitingList.push(currentUser);
+        }
+    } 
+    // =====================
+    // Proses Login
+    // =====================
+    else if (choice == "2") {
+        string username, password;
+        cout << "Username: ";
+        cin >> username;
+        cout << "Password: ";
+        cin >> password;
+        cout << endl;
+
+        bool loggedIn = false;
+        User* currentUser = nullptr;
+        for (User* user : users) {
+            if (user->login(username, password)) {
+                loggedIn = true;
+                currentUser = user;
+                break;
+            }
+        }
+
+        if (!loggedIn) {
+            cout << "\033[1;31mInvalid credentials\033[0m" << endl;
+            return 0;
+        }
+
+        // Tambahkan daftar film
+        cinema.addMovie(new Movie("When I Fly Towards You", "10:00 AM", "Monday", 10));
+        cinema.addMovie(new Movie("Hidden Love", "12.30 PM", "Tuesday", 12));
+        cinema.addMovie(new Movie("Math Teacher, My Soulmate", "03.00 PM", "Wednesday", 20));
+        cinema.addMovie(new Movie("Lovely Runner", "05.30 PM", "Thursday", 13));
+        cinema.addMovie(new Movie("Death's Game", "08.00 PM", "Friday", 17));
+
+        // Proses booking
+        size_t movieID;
+        int seatNumber;
+        cinema.displayMovies();
+        cout << "Select a movie by ID: ";
+        cin >> movieID;
+        movieID--;
+
+        if (movieID >= cinema.getNumberOfMovies()) {
+            cout << "\033[1;31mInvalid movie ID\033[0m" << endl;
+            return 0;
+        }
+
+        string movieTitle = cinema.getMovie(movieID)->getTitle();
+        set<int> booked = getBookedSeats(movieTitle);
+        displaySeats(booked, 50, 10);
+
+        cout << "Select a seat number (0-49): ";
+        cin >> seatNumber;
+
+        if (seatNumber < 0 || seatNumber >= 50) {
+            cout << "\033[1;31mInvalid seat number\033[0m" << endl;
+            return 0;
+        }
+        if (booked.count(seatNumber)) {
+            cout << "\033[1;31mSeat already booked!\033[0m" << endl;
+            return 0;
+        }
+
+        if (cinema.selectSeat(movieID, seatNumber)) {
+            saveBooking(currentUser->username, movieTitle, seatNumber); // Simpan ke file
+            bookingActions.push("User " + currentUser->username + " booked seat " + to_string(seatNumber) + " for movie " + movieTitle);
+            Booking::confirmBooking(currentUser, cinema.getMovie(movieID), seatNumber);
+            cinema.displayTicket(currentUser, cinema.getMovie(movieID), seatNumber);
+        } else {
+            cout << "\033[1;31mSeat is already taken. Adding to the waiting list.\033[0m" << endl;
+            waitingList.push(currentUser);
+        }
+    } 
+    // =====================
+    // Pilihan menu tidak valid
+    // =====================
+    else {
+        cout << "\033[1;31mInvalid option selected\033[0m" << endl;
+        return 0;
+    }
+
+    // Dealokasi user
+    for (User* user : users) {
+        delete user;
+    }
+
+    // =====================
+    // Menampilkan barcode tiket
+    // =====================
+    cout << endl;
+    cout << "            Scan Barcode:            " << endl;
+    cout << " __                               __ " << endl;
+    cout << "|  ===============================  |" << endl;
+    cout << "   []||||||||[]|||||||[]||||||||[]   " << endl;
+    cout << "   []||||||||[]|||||||[]||||||||[]   " << endl;
+    cout << "   []||||||||[]|||||||[]||||||||[]   " << endl;
+    cout << "   []||||||||[]|||||||[]||||||||[]   " << endl;
+    string barcode = generateBarcode(16);
+    cout << "   ";
+    for (char c : barcode) {
+        cout << c << " ";
+    }
+    cout << "  " << endl;
+    cout << "|===============================|" << endl;
+
+    // =====================
+    // Menampilkan riwayat booking (stack)
+    // =====================
+    cout << endl;
+    cout << "\033[1;33mRecent Booking Actions:\033[0m" << endl;
+    while (!bookingActions.empty()) {
+        cout << bookingActions.top() << endl;
+        bookingActions.pop();
+    }
+
+    return 0;
+}
